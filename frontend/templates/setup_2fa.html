@@ -1,0 +1,40 @@
+{% extends "_base.html" %}
+
+{% block title %}Ativar 2FA{% endblock %}
+
+{% block content %}
+<section class="card">
+    <h2>Ativar Autenticação de Dois Fatores (2FA)</h2>
+    <p>Aumente a segurança da sua conta. Siga os passos abaixo para ativar o 2FA.</p>
+
+    <div class="two-fa-setup">
+        <div class="qr-code-container">
+            <h3>Passo 1: Escaneie o QR Code</h3>
+            <p>Use um aplicativo autenticador (Google Authenticator, Authy, etc.) para escanear a imagem abaixo.</p>
+            <img src="data:image/png;base64,{{ qr_code }}" alt="QR Code para 2FA">
+        </div>
+
+        <div>
+            <h3>Passo 2: Guarde seus Códigos de Backup</h3>
+            <p>Guarde estes códigos em um local seguro. Eles permitirão o acesso à sua conta caso você perca seu dispositivo. Cada código só pode ser usado uma vez.</p>
+            <div class="backup-codes">
+                {% for code in backup_codes %}
+                    <code>{{ code }}</code>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <hr>
+
+    <h3>Passo 3: Verifique seu Aplicativo</h3>
+    <p>Para confirmar que a configuração funcionou, digite o código de 6 dígitos gerado pelo seu aplicativo autenticador.</p>
+    <form action="{{ url_for('setup_2fa') }}" method="POST">
+        <div class="form-group">
+            <label for="token">Código de 6 dígitos:</label>
+            <input type="text" id="token" name="token" required pattern="\d{6}" title="O código deve ter 6 dígitos" autocomplete="one-time-code">
+        </div>
+        <button type="submit" class="btn">Ativar e Entrar</button>
+    </form>
+</section>
+{% endblock %}

@@ -1,0 +1,19 @@
+{% extends "_base.html" %}
+
+{% block title %}Verificar Acesso{% endblock %}
+
+{% block content %}
+<div class="login-container">
+    <section class="card">
+        <h2>Verificação de Dois Fatores</h2>
+        <p>Digite o código de 6 dígitos do seu aplicativo autenticador ou um de seus códigos de backup.</p>
+        <form action="{{ url_for('verify_2fa') }}" method="POST">
+            <div class="form-group">
+                <label for="token">Código de Autenticação:</label>
+                <input type="text" id="token" name="token" required autocomplete="one-time-code">
+            </div>
+            <button type="submit" class="btn">Verificar e Entrar</button>
+        </form>
+    </section>
+</div>
+{% endblock %}

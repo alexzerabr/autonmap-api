@@ -1,0 +1,139 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  backend-migrate:
+    build:
+      context: .
+      dockerfile: deploy/backend/Dockerfile
+    command:
+      - /bin/sh
+      - -c
+      - |
+        /wait-for.sh db:5432
+        python3 -c "from api.db.models import Base; from api.db.session import engine; Base.metadata.create_all(bind=engine)"
+    env_file:
+      - .env
+    volumes:
+      - ./deploy/scripts/wait-for.sh:/wait-for.sh:ro
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  frontend-migrate:
+    build:
+      context: .
+      dockerfile: deploy/frontend/Dockerfile
+    command:
+      - /bin/sh
+      - -c
+      - |
+        /wait-for.sh db:5432
+        python3 -c "import os; from flask import Flask; from models import db, User; app = Flask(__name__); app.config['SQLALCHEMY_DATABASE_URI']=os.getenv('DATABASE_URL'); app.config['SQLALCHEMY_TRACK_MODIFICATIONS']=False; db.init_app(app); app.app_context().push(); db.create_all()"
+    env_file:
+      - .env
+    volumes:
+      - ./deploy/scripts/wait-for.sh:/wait-for.sh:ro
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  backend:
+    build:
+      context: .
+      dockerfile: deploy/backend/Dockerfile
+    env_file:
+      - .env
+    depends_on:
+      backend-migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:8000/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  worker:
+    build:
+      context: .
+      dockerfile: deploy/backend/Dockerfile
+    command: ["rq", "worker", "--url", "${REDIS_URL}", "scans"]
+    env_file:
+      - .env
+    cap_add:
+      - NET_RAW
+      - NET_ADMIN
+    depends_on:
+      backend:
+        condition: service_started
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: .
+      dockerfile: deploy/frontend/Dockerfile
+    env_file:
+      - .env
+    depends_on:
+      frontend-migrate:
+        condition: service_completed_successfully
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:5000/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:1.25-alpine
+    depends_on:
+      backend:
+        condition: service_started
+      frontend:
+        condition: service_started
+    volumes:
+      - ./deploy/nginx/conf.d:/etc/nginx/conf.d:ro
+    ports:
+      - "${APP_PORT:-80}:80"
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost/healthz || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:

@@ -1,0 +1,25 @@
+{% extends "_base.html" %}
+
+{% block title %}Meu Perfil{% endblock %}
+
+{% block content %}
+<section class="card">
+    <h2>Meu Perfil de Segurança</h2>
+    <p>Gerencie suas configurações de segurança e senha.</p>
+    <hr>
+    
+    <h3>Autenticação de Dois Fatores (2FA)</h3>
+    {% if user.is_2fa_enabled %}
+        <p>Status: <span class="status-active">Ativado</span>. Sua conta está protegida.</p>
+    {% else %}
+        <p>Status: <span class="status-inactive">Desativado</span>. Sua conta está menos segura.</p>
+        <a href="{{ url_for('setup_2fa') }}" class="btn">Ativar 2FA Agora</a>
+    {% endif %}
+
+    <hr>
+
+    <h3>Alterar Senha</h3>
+    <p>Altere sua senha de acesso ao painel.</p>
+    <a href="{{ url_for('change_password') }}" class="btn btn-danger">Alterar Minha Senha</a>
+</section>
+{% endblock %}

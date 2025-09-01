@@ -1,0 +1,188 @@
+/* Estilos gerais */
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f4f7f9; color: #333; line-height: 1.6; margin: 0; padding: 20px; }
+.container { max-width: 900px; margin: 0 auto; }
+header h1 { font-size: 2em; color: #2c3e50; text-align: center; margin-bottom: 20px; }
+footer { text-align: center; margin-top: 40px; color: #7f8c8d; }
+
+/* Navegação */
+.main-header { position: relative; text-align: center; margin-bottom: 20px; }
+nav { display: flex; justify-content: center; gap: 15px; margin-top: 10px; flex-wrap: wrap; }
+nav a { color: #3498db; text-decoration: none; font-weight: 500; }
+nav a:hover { text-decoration: underline; }
+.btn-logout { position: absolute; top: 0; right: 0; background-color: #e74c3c; color: white; padding: 8px 12px; border-radius: 4px; text-decoration: none; }
+.btn-logout:hover { background-color: #c0392b; }
+
+/* Cards */
+.card { background-color: #fff; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); padding: 25px; margin-bottom: 30px; }
+.card h2 { margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 20px; color: #34495e; }
+.card-header { display: flex; justify-content: space-between; align-items: center; }
+
+/* Formulário Padronizado */
+.form-group { margin-bottom: 15px; }
+.form-group label { display: block; font-weight: bold; margin-bottom: 5px; }
+.form-group input[type="text"],
+.form-group input[type="number"],
+.form-group input[type="email"],
+.form-group input[type="password"] {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+    font-size: 1em;
+}
+.form-group small { color: #7f8c8d; font-size: 0.9em; }
+.checkbox-group { display: flex; flex-wrap: wrap; gap: 15px; }
+.checkbox-group label, .checkbox-inline { font-weight: normal; }
+.form-actions { margin-top: 20px; display: flex; gap: 10px; }
+
+/* Botões Padronizados */
+.btn { background-color: #3498db; color: #fff; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; font-size: 1em; text-decoration: none; display: inline-block; }
+.btn:hover { background-color: #2980b9; }
+.btn-danger, .btn-secondary { background-color: #e74c3c; }
+.btn-danger:hover, .btn-secondary:hover { background-color: #c0392b; }
+.btn-warning { background-color: #f39c12; }
+.btn-warning:hover { background-color: #e67e22; }
+
+/* Tabela */
+table { width: 100%; border-collapse: collapse; }
+th, td { text-align: left; padding: 12px; border-bottom: 1px solid #ddd; }
+th { background-color: #f2f2f2; }
+tr:hover { background-color: #f9f9f9; }
+td.actions { display: flex; gap: 5px; flex-wrap: wrap; }
+
+/* Mensagens Flash */
+.flash { padding: 15px; margin-bottom: 20px; border-radius: 4px; border: 1px solid transparent; }
+.flash-success { background-color: #d4edda; color: #155724; border-color: #c3e6cb; }
+.flash-error { background-color: #f8d7da; color: #721c24; border-color: #f5c6cb; }
+.flash-warning { background-color: #fff3cd; color: #856404; border-color: #ffeeba; }
+
+/* 2FA e Login */
+.login-container { max-width: 400px; margin: 50px auto; }
+.two-fa-setup { display: grid; grid-template-columns: 1fr; gap: 30px; align-items: center; text-align: center; }
+@media (min-width: 600px) { .two-fa-setup { grid-template-columns: 1fr 1fr; text-align: left; } }
+.qr-code-container { text-align: center; }
+.qr-code-container img { width: 200px; height: 200px; }
+.backup-codes { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; background-color: #f9f9f9; padding: 10px; border-radius: 4px; }
+.backup-codes code { font-family: monospace; font-size: 1.1em; }
+.status-active { color: #27ae60; font-weight: bold; }
+.status-inactive { color: #e74c3c; font-weight: bold; }
+
+/* --- Estilos da Página de Documentação --- */
+.endpoint-description {
+    font-size: 1.1em;
+    color: #555;
+    margin-bottom: 20px;
+}
+.method {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 4px;
+    color: #fff;
+    font-weight: bold;
+    margin-right: 10px;
+    font-family: monospace;
+}
+.method.post { background-color: #49cc90; }
+.method.get { background-color: #61affe; }
+.method.delete { background-color: #f93e3e; }
+
+.param-list {
+    list-style-type: none;
+    padding-left: 0;
+}
+.param-list li {
+    margin-bottom: 10px;
+    font-family: monospace;
+}
+.param-list code {
+    background-color: #eee;
+    padding: 2px 4px;
+    border-radius: 3px;
+}
+
+.code-block {
+    background-color: #2d2d2d;
+    color: #f8f8f2;
+    padding: 20px;
+    border-radius: 5px;
+    overflow-x: auto;
+    font-family: 'Courier New', Courier, monospace;
+}
+.code-block pre {
+    margin: 0;
+}
+
+.workflow-list {
+    list-style-position: inside;
+    line-height: 1.8;
+}
+
+.profile-table code {
+    background-color: #eaf2f8;
+    color: #2c3e50;
+    padding: 3px 6px;
+    border-radius: 4px;
+    font-size: 0.95em;
+}
+
+.btn-edit {
+    background-color: #27ae60;
+}
+.btn-edit:hover {
+    background-color: #229954;
+}
+
+/* --- Estilos da Janela Modal --- */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.6);
+    padding-top: 60px;
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 5% auto;
+    padding: 30px;
+    border: 1px solid #888;
+    width: 90%;
+    max-width: 600px;
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    position: relative;
+}
+
+.close-btn {
+    color: #aaa;
+    position: absolute;
+    top: 10px;
+    right: 20px;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close-btn:hover,
+.close-btn:focus {
+    color: black;
+    text-decoration: none;
+}
+
+.token-display {
+    display: flex;
+    margin: 15px 0;
+}
+
+.token-display input {
+    flex-grow: 1;
+    font-family: monospace;
+    font-size: 1.1em;
+    background-color: #f0f0f0;
+}

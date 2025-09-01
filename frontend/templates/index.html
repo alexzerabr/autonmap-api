@@ -1,0 +1,122 @@
+{% extends "_base.html" %}
+
+{% block content %}
+<section class="card">
+    <h2>Criar Novo Token de API</h2>
+    <p>Use este formulário para gerar um novo token de acesso para usar com a API.</p>
+    <form action="{{ url_for('create_token') }}" method="POST">
+        <div class="form-group">
+            <label for="name">Nome do Token:</label>
+            <input type="text" id="name" name="name" placeholder="Ex: meu-script-de-automacao" required>
+        </div>
+        <div class="form-group">
+            <label>Permissões (Scopes):</label>
+            <div class="checkbox-group">
+                <label><input type="checkbox" name="scopes" value="scan:read" checked> Ler Scans</label>
+                <label><input type="checkbox" name="scopes" value="scan:write" checked> Criar Scans</label>
+                {% if session.is_admin %}
+                <label><input type="checkbox" name="scopes" value="admin:read"> Ler Tokens (Admin)</label>
+                <label><input type="checkbox" name="scopes" value="admin:write"> Criar/Revogar Tokens (Admin)</label>
+                {% endif %}
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="expires_in_days">Expira em (dias):</label>
+            <input type="number" id="expiresInput" name="expires_in_days" value="30" min="1" required>
+        </div>
+        <div class="form-group">
+             <label class="checkbox-inline">
+                <input type="checkbox" id="neverExpiresCheck" name="never_expires"> Expira Nunca
+            </label>
+        </div>
+        <button type="submit" class="btn">Gerar Token</button>
+    </form>
+</section>
+
+<section class="card">
+    <h2>Meus Tokens de API Ativos</h2>
+    {% if tokens %}
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Nome</th>
+                {% if session.is_admin %}<th>Proprietário</th>{% endif %}
+                <th>Permissões</th>
+                <th>Expira em</th>
+                <th>Ação</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for token in tokens %}
+            <tr>
+                <td>{{ token.id }}</td>
+                <td>{{ token.name }}</td>
+                {% if session.is_admin %}<td>{{ token.owner_username or 'N/A' }}</td>{% endif %}
+                <td>{{ token.scopes | join(', ') }}</td>
+                <td>{{ token.expires_at or 'Nunca' }}</td>
+                <td>
+                    {% if session.is_admin or token.owner_username == session.username %}
+                    <form action="{{ url_for('revoke', token_id=token.id) }}" method="POST" onsubmit="return confirm('Tem certeza que deseja revogar este token?');">
+                        <button type="submit" class="btn btn-danger">Revogar</button>
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>Nenhum token ativo encontrado.</p>
+    {% endif %}
+</section>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+        {% if category == 'new_token_data' %}
+            {% set new_token_data = message | fromjson %}
+            {% include "_token_modal.html" %}
+        {% endif %}
+    {% endfor %}
+{% endwith %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const expiresInput = document.getElementById('expiresInput');
+        const neverExpiresCheck = document.getElementById('neverExpiresCheck');
+        if (neverExpiresCheck) {
+            neverExpiresCheck.addEventListener('change', function() {
+                expiresInput.disabled = this.checked;
+                expiresInput.required = !this.checked;
+                if (this.checked) {
+                    expiresInput.value = '';
+                } else {
+                    expiresInput.value = '30';
+                }
+            });
+        }
+
+        const modal = document.getElementById('tokenModal');
+        if (modal) {
+            const closeBtn = document.querySelector('.modal .close-btn');
+            const copyBtn = document.getElementById('copyTokenBtn');
+            const tokenInput = document.getElementById('apiTokenInput');
+
+            modal.style.display = 'block';
+
+            closeBtn.onclick = () => { modal.style.display = 'none'; };
+            window.onclick = (event) => { if (event.target == modal) modal.style.display = 'none'; };
+            
+            copyBtn.onclick = () => {
+                tokenInput.select();
+                document.execCommand('copy');
+                copyBtn.textContent = 'Copiado!';
+                setTimeout(() => { copyBtn.textContent = 'Copiar'; }, 2000);
+            };
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,153 @@
+{% extends "_base.html" %}
+
+{% block title %}Documentação da API{% endblock %}
+
+{% block content %}
+<section class="card">
+    <h2>Documentação da API autonmap</h2>
+    <p>Esta documentação detalha todos os endpoints disponíveis para interagir com o serviço de scans. A comunicação com a API é feita via REST, utilizando JSON como formato de dados.</p>
+</section>
+
+<section class="card">
+    <h3>Autenticação</h3>
+    <p>Todas as requisições à API devem ser autenticadas. A autenticação é feita através de um token de acesso enviado no cabeçalho <code>X-API-Token</code>.</p>
+    <p>Tokens podem ser criados e gerenciados pelo painel de administração e devem possuir os "scopes" (permissões) necessários para a operação desejada.</p>
+    <div class="code-block">
+        <pre><code># Exemplo de Cabeçalho de Autenticação
+X-API-Token: SEU_TOKEN_DE_API_AQUI</code></pre>
+    </div>
+</section>
+
+<section class="card">
+    <h3>Fluxo de Trabalho Recomendado</h3>
+    <ol class="workflow-list">
+        <li>Use o painel de administração para <strong>criar um token de API</strong> com os escopos necessários (ex: <code>scan:read</code>, <code>scan:write</code>).</li>
+        <li>Consulte a <strong>tabela de perfis</strong> abaixo para escolher a varredura desejada.</li>
+        <li>Envie uma requisição <code>POST /v1/scans/</code> para <strong>iniciar uma nova varredura</strong>. Guarde o <code>id</code> retornado.</li>
+        <li>Periodicamente, use <code>GET /v1/scans/{id}</code> para <strong>verificar o status</strong> do scan.</li>
+        <li>Quando o status for <code>succeeded</code>, use <code>GET /v1/scans/{id}/result.json</code> para <strong>obter o resultado</strong>.</li>
+    </ol>
+</section>
+
+<!-- ====================================================================== -->
+<!-- ENDPOINTS DE SCANS -->
+<!-- ====================================================================== -->
+<section class="card">
+    <h2>Endpoints de Varredura</h2>
+    <hr>
+    <h4><span class="method post">POST</span> /v1/scans/</h4>
+    <p class="endpoint-description">Cria e enfileira uma nova varredura Nmap. A API responde imediatamente com o ID do scan, e a execução ocorre em segundo plano.</p>
+    
+    <h5>Parâmetros (Corpo JSON)</h5>
+    <ul class="param-list">
+        <li><code>targets</code> (array[string], obrigatório): Lista de alvos. Ex: <code>["scanme.nmap.org"]</code></li>
+        <li><code>profile</code> (string, obrigatório): O perfil de scan a ser utilizado. Veja a tabela de perfis abaixo.</li>
+        <li><code>ports</code> (string, opcional): Lista de portas para escanear. Se omitido, usa as portas padrão do Nmap. Ex: <code>"1-1024"</code>, <code>"80,443"</code>.</li>
+        <li><code>timing_template</code> (string, opcional): A velocidade do scan, de <code>T0</code> (mais lento) a <code>T5</code> (mais rápido). Padrão: <code>T3</code>.</li>
+        <li><code>notes</code> (string, opcional): Uma anotação sobre o scan.</li>
+        <li><code>callback_url</code> (string, opcional): URL para notificação via webhook.</li>
+    </ul>
+
+    <h5>Exemplo de Requisição (curl)</h5>
+    <div class="code-block">
+        <pre><code>curl -X 'POST' 'http://localhost:8000/v1/scans/' \
+  -H 'X-API-Token: SEU_TOKEN_DE_USUARIO_AQUI' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "targets": ["scanme.nmap.org"],
+    "profile": "vuln_syn_stealth",
+    "timing_template": "T4",
+    "ports": "1-1024"
+  }'</code></pre>
+    </div>
+
+    <h5>Exemplo de Resposta (202 Accepted)</h5>
+    <div class="code-block">
+        <pre><code>{
+  "id": "b29db5b8-b015-45eb-98e3-6cdb5c070f13",
+  "status": "queued",
+  "profile": "vuln_syn_stealth",
+  "targets": ["scanme.nmap.org"],
+  "created_at": "2025-08-29T09:00:00Z"
+}</code></pre>
+    </div>
+
+    <hr>
+
+    <h4><span class="method get">GET</span> /v1/scans/</h4>
+    <p class="endpoint-description">Lista os scans já realizados, do mais recente para o mais antigo. Requer escopo <code>scan:read</code>.</p>
+
+    <hr>
+
+    <h4><span class="method get">GET</span> /v1/scans/{id}</h4>
+    <p class="endpoint-description">Consulta o status e os metadados de um scan específico. Requer escopo <code>scan:read</code>.</p>
+
+    <hr>
+
+    <h4><span class="method get">GET</span> /v1/scans/{id}/result.{format}</h4>
+    <p class="endpoint-description">Baixa o resultado completo de um scan bem-sucedido. O formato pode ser <code>json</code> ou <code>xml</code>. Requer escopo <code>scan:read</code>.</p>
+</section>
+
+
+<!-- ====================================================================== -->
+<!-- ENDPOINTS DE PERFIS -->
+<!-- ====================================================================== -->
+<section class="card">
+    <h2>Perfis de Scan Disponíveis</h2>
+    <p>Os perfis abaixo representam as funcionalidades do script <code>autonmap</code> original, adaptadas para um ambiente de API seguro.</p>
+    <table class="profile-table">
+        <thead>
+            <tr>
+                <th>Nome do Perfil</th>
+                <th>Equivalente no Script</th>
+                <th>Descrição</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><code>basic_version_detection</code></td>
+                <td>Opção [1]</td>
+                <td>Scan básico de detecção de serviços e versões (<code>-sV</code>).</td>
+            </tr>
+            <tr>
+                <td><code>aggressive_scan</code></td>
+                <td>Opção [2]</td>
+                <td>Scan agressivo com detecção de OS, versão, scripts e traceroute (<code>-A</code>).</td>
+            </tr>
+            <tr>
+                <td><code>vuln_tcp_evasive</code></td>
+                <td>Opções [4], [5]</td>
+                <td>Scan de vulnerabilidades com TCP Connect (<code>-sT</code>) e técnicas de evasão como fragmentação.</td>
+            </tr>
+            <tr>
+                <td><code>vuln_syn_stealth</code></td>
+                <td>Opção [7]</td>
+                <td>Scan de vulnerabilidades furtivo com SYN Scan (<code>-sS</code>) e técnicas de evasão. **Requer privilégios de root no worker.**</td>
+            </tr>
+            <tr>
+                <td><code>proxy_vuln_scan</code></td>
+                <td>Opção [9]</td>
+                <td>Scan agressivo de vulnerabilidades roteado através do <code>proxychains</code>.</td>
+            </tr>
+        </tbody>
+    </table>
+    <p><strong>Nota:</strong> Para escanear todas as portas (equivalente às opções [3], [6], [8], [0]), use qualquer perfil acima em conjunto com o parâmetro <code>"ports": "1-65535"</code>.</p>
+</section>
+
+<!-- ====================================================================== -->
+<!-- ENDPOINTS DE ADMINISTRAÇÃO -->
+<!-- ====================================================================== -->
+<section class="card">
+    <h2>Endpoints de Administração de Tokens</h2>
+    <p>Estas rotas são usadas para gerenciar os tokens de acesso à API e requerem um token com escopos de <code>admin</code>.</p>
+    <hr>
+    <h4><span class="method post">POST</span> /v1/tokens/</h4>
+    <p class="endpoint-description">Cria um novo token de API. Requer escopo <code>admin:write</code>.</p>
+    <hr>
+    <h4><span class="method get">GET</span> /v1/tokens/</h4>
+    <p class="endpoint-description">Lista os tokens de API existentes. Requer escopo <code>admin:read</code>.</p>
+    <hr>
+    <h4><span class="method delete">DELETE</span> /v1/tokens/{token_id}</h4>
+    <p class="endpoint-description">Revoga (desativa) um token de API. Requer escopo <code>admin:write</code>.</p>
+</section>
+{% endblock %}

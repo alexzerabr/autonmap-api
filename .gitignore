@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+
+# Node/Frontend
+node_modules/
+dist/
+build/
+
+# Docker
+*.pid
+*.log
+.env
+.env.local
+.env.*.local
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+
+# Arquivos temporários
+*.zip
+*.tar
+*.gz
+.DS_Store

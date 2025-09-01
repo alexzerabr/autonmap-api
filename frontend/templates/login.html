@@ -1,0 +1,23 @@
+{% extends "_base.html" %}
+
+{% block title %}Login - Painel Admin{% endblock %}
+
+{% block content %}
+<div class="login-container">
+    <section class="card">
+        <h2>Acesso ao Painel</h2>
+        <p>Use suas credenciais para continuar.</p>
+        <form action="{{ url_for('login') }}" method="POST">
+            <div class="form-group">
+                <label for="username">Usuário:</label>
+                <input type="text" id="username" name="username" required autocomplete="username">
+            </div>
+            <div class="form-group">
+                <label for="password">Senha:</label>
+                <input type="password" id="password" name="password" required autocomplete="current-password">
+            </div>
+            <button type="submit" class="btn">Entrar</button>
+        </form>
+    </section>
+</div>
+{% endblock %}

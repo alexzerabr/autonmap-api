@@ -1,0 +1,54 @@
+{% extends "_base.html" %}
+
+{% block title %}Gerenciar Usuários{% endblock %}
+
+{% block content %}
+<section class="card">
+    <div class="card-header">
+        <h2>Gerenciar Usuários</h2>
+        <a href="{{ url_for('create_user') }}" class="btn">Criar Novo Usuário</a>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Nome Completo</th>
+                <th>Usuário</th>
+                <th>Email</th>
+                <th>Permissão</th>
+                <th>2FA Ativo?</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in users %}
+            <tr>
+                <td>{{ user.id }}</td>
+                <td>{{ user.first_name }} {{ user.last_name }}</td>
+                <td>{{ user.username }}</td>
+                <td>{{ user.email }}</td>
+                <td>{% if user.is_admin %}<strong>Admin</strong>{% else %}Padrão{% endif %}</td>
+                <td>{% if user.is_2fa_enabled %}Sim{% else %}Não{% endif %}</td>
+                <td class="actions">
+                    <a href="{{ url_for('edit_user', user_id=user.id) }}" class="btn btn-edit">Editar</a>
+                    
+                    <form action="{{ url_for('admin_reset_password', user_id=user.id) }}" method="POST" onsubmit="return confirm('Tem certeza que deseja resetar a senha de {{ user.username }}?');">
+                        <button type="submit" class="btn btn-warning">Resetar Senha</button>
+                    </form>
+                    
+                    <form action="{{ url_for('reset_2fa', user_id=user.id) }}" method="POST" onsubmit="return confirm('Tem certeza que deseja resetar o 2FA para {{ user.username }}?');">
+                        <button type="submit" class="btn btn-warning">Resetar 2FA</button>
+                    </form>
+                    
+                    {% if not user.is_admin %}
+                    <form action="{{ url_for('delete_user', user_id=user.id) }}" method="POST" onsubmit="return confirm('ATENÇÃO: Tem certeza que deseja DELETAR o usuário {{ user.username }}?');">
+                        <button type="submit" class="btn btn-danger">Deletar</button>
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</section>
+{% endblock %}

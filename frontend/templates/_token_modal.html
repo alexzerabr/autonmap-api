@@ -1,0 +1,19 @@
+<div id="tokenModal" class="modal">
+    <div class="modal-content">
+        <span class="close-btn">&times;</span>
+        <h2>Token Gerado com Sucesso!</h2>
+        <p>Este é o seu novo token de API. Guarde-o em um local seguro, pois ele <strong>não será exibido novamente</strong>.</p>
+        <div class="token-display">
+            <input type="text" value="{{ new_token_data.api_token }}" id="apiTokenInput" readonly>
+            <button id="copyTokenBtn" class="btn">Copiar</button>
+        </div>
+        <hr>
+        <h4>Detalhes do Token:</h4>
+        <ul>
+            <li><strong>Nome:</strong> {{ new_token_data.token_details.name }}</li>
+            <li><strong>Proprietário:</strong> {{ new_token_data.token_details.owner_username }}</li>
+            <li><strong>Permissões:</strong> {{ new_token_data.token_details.scopes | join(', ') }}</li>
+            <li><strong>Expira em:</strong> {{ new_token_data.token_details.expires_at or 'Nunca' }}</li>
+        </ul>
+    </div>
+</div>

@@ -1,0 +1,26 @@
+# Web Framework
+fastapi==0.111.0
+uvicorn[standard]==0.29.0
+
+# Pydantic e Configurações
+pydantic==2.7.1
+pydantic-settings==2.2.1
+
+# Banco de Dados e ORM
+sqlalchemy==2.0.30
+psycopg2-binary==2.9.9
+alembic==1.13.1
+
+# Tarefas Assíncronas
+redis==5.0.4
+rq==1.16.2
+
+# Segurança
+passlib[argon2]==1.7.4
+python-jose[cryptography]==3.3.0
+
+# Utilitários
+python-dotenv==1.0.1
+xmltodict==0.13.0
+httpx==0.27.0
+Werkzeug==3.0.3
