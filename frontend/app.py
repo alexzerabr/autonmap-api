@@ -26,13 +26,10 @@ db.init_app(app)
 migrate = Migrate(app, db)
 user_cli.init_app(app)
 
-# --- NOVO FILTRO JINJA ---
-# Ensina o Jinja a converter uma string JSON de volta para um objeto Python.
 def fromjson_filter(value):
     return json.loads(value)
 
 app.jinja_env.filters['fromjson'] = fromjson_filter
-# --- FIM DA CORREÇÃO ---
 
 
 # --- Configurações Lidas do .env ---
@@ -64,7 +61,7 @@ def admin_required(f):
 def docs():
     return render_template("docs.html")
 
-# --- Rotas de Autenticação e 2FA (sem alterações) ---
+# --- Rotas de Autenticação e 2FA ---
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":

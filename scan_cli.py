@@ -51,9 +51,9 @@ ensure_venv_and_reexec(packages=["requests"])
 import requests
 from pathlib import Path
 
-API_URL = os.getenv("AUTONMAP_API_URL", "http://localhost/api")
+API_URL = os.getenv("AUTONMAP_API_URL", "https://api-autonmap.hubsoft.com.br/api")
 TOKEN_FILE = Path.home() / ".autonmap_token"
-API_TOKEN = "yuWYiJWghya6f84Tlzn3HYM_FprdXOe9kCG1CKihZas" # Gerar seu próprio token
+API_TOKEN = "token-gerado-em-seu-usuário" # Gerar seu próprio token
 
 class Colors:
     RED = '\033[91m'
