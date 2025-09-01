@@ -28,3 +28,8 @@ build/
 *.tar
 *.gz
 .DS_Store
+
+# Dockerfiles
+deploy/backend/Dockerfile
+deploy/frontend/Dockerfile
+deploy/nginx/Dockerfile

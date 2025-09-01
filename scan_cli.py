@@ -4,23 +4,76 @@ import sys
 import json
 import time
 import argparse
+import subprocess
+from pathlib import Path
+
+def _venv_python_path(venv_dir: Path) -> Path:
+    return venv_dir / ("Scripts" if os.name == "nt" else "bin") / ("python.exe" if os.name == "nt" else "python")
+
+def _in_venv() -> bool:
+    return bool(os.environ.get("VIRTUAL_ENV")) or (sys.prefix != getattr(sys, "base_prefix", sys.prefix))
+
+def _has_module(python_exe: str, module: str) -> bool:
+    try:
+        subprocess.run([python_exe, "-c", f"import {module}"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
+        return True
+    except subprocess.CalledProcessError:
+        return False
+
+def ensure_venv_and_reexec(venv_dir: Path = None, packages=None):
+    if packages is None:
+        packages = []
+    script_dir = Path(__file__).resolve().parent
+    venv_dir = venv_dir or (script_dir / ".venv")
+    vpy = _venv_python_path(venv_dir)
+
+    if _in_venv():
+        for pkg in packages:
+            mod = pkg.split("==")[0].split(">=")[0].split("<=")[0]
+            if not _has_module(sys.executable, mod):
+                subprocess.run([sys.executable, "-m", "pip", "install", "-q", "--disable-pip-version-check", pkg], check=True)
+        return
+
+    if not vpy.exists():
+        print(f"Criando ambiente virtual em {venv_dir}...")
+        subprocess.check_call([sys.executable, "-m", "venv", str(venv_dir)])
+
+    for pkg in packages:
+        mod = pkg.split("==")[0].split(">=")[0].split("<=")[0]
+        if not _has_module(str(vpy), mod):
+            print(f"Instalando dependências no venv: {pkg}")
+            subprocess.run([str(vpy), "-m", "pip", "install", "-q", "--disable-pip-version-check", pkg], check=True)
+
+    os.execv(str(vpy), [str(vpy), *sys.argv])
+
+ensure_venv_and_reexec(packages=["requests"])
+
 import requests
 from pathlib import Path
 
-# --- Configuração ---
 API_URL = os.getenv("AUTONMAP_API_URL", "http://localhost/api")
 TOKEN_FILE = Path.home() / ".autonmap_token"
 API_TOKEN = "_eaCqGlkdxBkznMa_zlXIT5mD7kzs420aylgk3_FMS8"
 
-# --- Cores para o Terminal ---
 class Colors:
     RED = '\033[91m'
     GREEN = '\033[92m'
     YELLOW = '\033[93m'
     CYAN = '\033[96m'
     RESET = '\033[0m'
+    BOLD = '\033[1m'
 
-# --- Funções de Formatação ---
+BANNER = f"""
+{Colors.CYAN}
+ █████╗ ██╗   ██╗████████╗ ██████╗     ███╗   ██ ███╗   ███╗ ╔███╗  ╔████╗
+██╔══██╗██║   ██║╚══██╔══╝██╔═══██╗    ████╗  ██║████╗ ████║██╔══██╗██╔══██╗
+███████║██║   ██║   ██║   ██║   ██║    ██╔██╗ ██║██╔████╔██║███████║██████╔╝
+██╔══██║██║   ██║   ██║   ██║   ██║    ██║╚██╗██║██║╚██╔╝██║██╔══██║██╔═══╝
+██║  ██║╚██████╔╝   ██║   ╚██████╔╝    ██║ ╚████║██║ ╚═╝ ██║██║  ██║██║
+╚═╝  ╚═╝ ╚═════╝    ╚═╝    ╚═════╝     ╚═╝  ╚═══╝╚═╝     ╚═╝╚═╝  ╚═╝╚═╝
+{Colors.RESET}criado por Alexsander.
+"""
+
 def print_formatted_nmap(data: dict):
     try:
         nmaprun = data.get("nmaprun", {})
@@ -43,7 +96,7 @@ def print_formatted_nmap(data: dict):
                 if not isinstance(names, list): names = [names]
                 hostname_str = f"{names[0].get('@name', '')} {hostname_str}"
 
-            print(f"Nmap scan report for {hostname_str}")
+            print(f"\n{Colors.BOLD}Nmap scan report for {hostname_str}{Colors.RESET}")
             print(f"Host is up ({h.get('status', {}).get('@reason', 'N/A')}).")
 
             ports_data = h.get("ports", {})
@@ -70,20 +123,17 @@ def print_formatted_nmap(data: dict):
         print(f"Erro ao processar o resultado do scan: {e}", file=sys.stderr)
         json.dump(data, sys.stdout, indent=2)
 
-# --- Funções de Interação com a API ---
 def resolve_token(cli_token: str = None) -> str:
     if cli_token: return cli_token
     if os.getenv("AUTONMAP_API_TOKEN"): return os.getenv("AUTONMAP_API_TOKEN")
     if API_TOKEN: return API_TOKEN
     if TOKEN_FILE.exists(): return TOKEN_FILE.read_text().strip()
-    
     token = input("Por favor, cole seu token de API da autonmap: ").strip()
     if token:
         TOKEN_FILE.write_text(token)
         TOKEN_FILE.chmod(0o600)
         print(f"{Colors.GREEN}Token salvo em {TOKEN_FILE} para uso futuro.{Colors.RESET}")
         return token
-    
     print(f"{Colors.RED}Erro: Token da API não fornecido.{Colors.RESET}", file=sys.stderr)
     sys.exit(1)
 
@@ -92,34 +142,34 @@ def execute_and_wait(payload: dict, headers: dict):
         response = requests.post(f"{API_URL}/v1/scans/", headers=headers, json=payload)
         response.raise_for_status()
         scan_id = response.json()['id']
-        print(f"✅ Scan enfileirado com sucesso. ID: {scan_id}")
-        print("⏳ Aguardando a conclusão...")
+        print(f"Scan enfileirado com sucesso. ID: {scan_id}")
+        print("Aguardando a conclusão...")
 
         while True:
             status_response = requests.get(f"{API_URL}/v1/scans/{scan_id}", headers=headers)
             status_response.raise_for_status()
             current_status = status_response.json()['status']
-            
-            print(f"   - Status atual: {Colors.CYAN}{current_status}{Colors.RESET}         ", end='\r', flush=True)
-            
+            print(f"Status atual: {Colors.CYAN}{current_status}{Colors.RESET}         ", end='\r', flush=True)
             if current_status in ["succeeded", "failed"]:
-                print(f"\n🎉 Tarefa concluída com status: {current_status}!")
+                print(f"\nTarefa concluída com status: {current_status}")
                 break
             time.sleep(15)
 
         if current_status == "succeeded":
-            print("\n" + "--- Resultado Final do Scan ---")
+            print("\nResultado Final do Scan")
             result_response = requests.get(f"{API_URL}/v1/scans/{scan_id}/result.json", headers=headers)
             result_response.raise_for_status()
             print_formatted_nmap(result_response.json())
         else:
-            print(f"\n{Colors.RED}🔴 O scan falhou. Verifique os logs do worker para mais detalhes.{Colors.RESET}")
+            print(f"\n{Colors.RED}O scan falhou. Verifique os logs do worker para mais detalhes.{Colors.RESET}")
 
     except requests.exceptions.RequestException as e:
-        print(f"\n❌ Erro de comunicação com a API: {e}", file=sys.stderr)
+        print(f"\nErro de comunicação com a API: {e}", file=sys.stderr)
 
-# --- Lógica do Modo Interativo ---
 def run_interactive_mode(token: str):
+    print(BANNER)
+    print(f"{Colors.CYAN}Enjoy!{Colors.RESET}\n")
+
     headers = {"X-API-Token": token, "Content-Type": "application/json"}
     target = input("Target (IP or Domain): ")
     if not target: return
@@ -147,7 +197,6 @@ def run_interactive_mode(token: str):
         
     profile, ports = menu[choice]
 
-    # --- MENU DE TIMING COLORIDO ---
     print("\nTiming templates:\n")
     print(f"T0 --->{Colors.CYAN} Paranoid {Colors.RESET}")
     print(f"T1 --->{Colors.CYAN} Sneaky{Colors.RESET}")
@@ -168,7 +217,6 @@ def run_interactive_mode(token: str):
         
     execute_and_wait(payload, headers)
 
-# --- CLI Principal ---
 def main():
     parser = argparse.ArgumentParser(description="Cliente CLI para a API autonmap.", add_help=False)
     parser.add_argument("-t", "--target", help="O alvo do scan.")

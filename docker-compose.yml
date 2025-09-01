@@ -26,14 +26,14 @@ services:
     restart: unless-stopped
 
   backend-migrate:
-    build:
-      context: .
-      dockerfile: deploy/backend/Dockerfile
+    image: ghcr.io/alexzerabr/autonmap-api-backend:latest
     command:
       - /bin/sh
       - -c
       - |
         /wait-for.sh db:5432
+        cd /home/appuser
+        export PYTHONPATH="${PYTHONPATH:-}:/home/appuser"
         python3 -c "from api.db.models import Base; from api.db.session import engine; Base.metadata.create_all(bind=engine)"
     env_file:
       - .env
@@ -45,14 +45,14 @@ services:
     restart: "no"
 
   frontend-migrate:
-    build:
-      context: .
-      dockerfile: deploy/frontend/Dockerfile
+    image: ghcr.io/alexzerabr/autonmap-api-frontend:latest
     command:
       - /bin/sh
       - -c
       - |
         /wait-for.sh db:5432
+        cd /home/appuser
+        export PYTHONPATH="${PYTHONPATH:-}:/home/appuser"
         python3 -c "import os; from flask import Flask; from models import db, User; app = Flask(__name__); app.config['SQLALCHEMY_DATABASE_URI']=os.getenv('DATABASE_URL'); app.config['SQLALCHEMY_TRACK_MODIFICATIONS']=False; db.init_app(app); app.app_context().push(); db.create_all()"
     env_file:
       - .env
@@ -64,9 +64,7 @@ services:
     restart: "no"
 
   backend:
-    build:
-      context: .
-      dockerfile: deploy/backend/Dockerfile
+    image: ghcr.io/alexzerabr/autonmap-api-backend:latest
     env_file:
       - .env
     depends_on:
@@ -82,9 +80,7 @@ services:
     restart: unless-stopped
 
   worker:
-    build:
-      context: .
-      dockerfile: deploy/backend/Dockerfile
+    image: ghcr.io/alexzerabr/autonmap-api-backend:latest
     command: ["rq", "worker", "--url", "${REDIS_URL}", "scans"]
     env_file:
       - .env
@@ -99,9 +95,7 @@ services:
     restart: unless-stopped
 
   frontend:
-    build:
-      context: .
-      dockerfile: deploy/frontend/Dockerfile
+    image: ghcr.io/alexzerabr/autonmap-api-frontend:latest
     env_file:
       - .env
     depends_on:
@@ -117,14 +111,12 @@ services:
     restart: unless-stopped
 
   nginx:
-    image: nginx:1.25-alpine
+    image: ghcr.io/alexzerabr/autonmap-api-nginx:latest
     depends_on:
       backend:
         condition: service_started
       frontend:
         condition: service_started
-    volumes:
-      - ./deploy/nginx/conf.d:/etc/nginx/conf.d:ro
     ports:
       - "${APP_PORT:-80}:80"
     healthcheck:

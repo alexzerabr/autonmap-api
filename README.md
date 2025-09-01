@@ -1,8 +1,9 @@
+
 # autonmap-api
 
 API REST segura para orquestrar varreduras Nmap, de modo automático e gerenciado via token.
 
-Este projeto fornece uma solução completa para execução de scans Nmap de forma assíncrona, com endpoints protegidos, painel de administração com autenticação 2FA e fila de tarefas baseada em Redis. A infraestrutura foi desenhada para rodar em produção via Docker Compose, utilizando Nginx como proxy reverso, PostgreSQL 16 como banco de dados.
+Este projeto fornece uma solução completa para execução de scans Nmap de forma assíncrona, com endpoints protegidos, painel de administração com autenticação 2FA e fila de tarefas baseada em Redis. A infraestrutura foi desenhada para rodar em produção via Docker Compose, utilizando Nginx como proxy reverso e PostgreSQL 16 como banco de dados. As imagens de contêiner são publicadas no **GitHub Container Registry (GHCR)**.
 
 ## ✨ Funcionalidades Principais
 
@@ -32,10 +33,9 @@ Este projeto fornece uma solução completa para execução de scans Nmap de for
 
 ## 🚀 Como Executar em Produção
 
-### Pré‑requisitos
+### Pré-requisitos
 - Docker (20.10+) e Docker Compose (v2).
 - `openssl`.
-- Opcional: `make`.
 
 ### Método Automatizado
 ```bash
@@ -45,39 +45,53 @@ chmod +x setup.sh
 ./setup.sh
 ```
 
-- Painel: http://localhost  
-- API Swagger: http://localhost/api/docs  
+Painel: [http://localhost](http://localhost)  
+API Swagger: [http://localhost/api/docs](http://localhost/api/docs)
 
 ### Método Manual
-1. Remover containers/volumes antigos.
-2. Criar `.env` a partir de `.env.example` e preencher variáveis.
-3. Subir os serviços com:
-   ```bash
-   docker compose --env-file .env up -d --build
-   ```
-4. Criar usuário administrador:
-   ```bash
-   docker compose exec frontend flask user create-admin
-   ```
-5. Gerar token de API e adicionar ao `.env`:
-   ```bash
-   docker compose exec backend python -m scripts.create_admin_token --name super-admin-inicial
-   ```
-6. Reiniciar frontend:
-   ```bash
-   docker compose restart frontend
-   ```
+
+Remover containers/volumes antigos:
+```bash
+docker compose down -v --remove-orphans || true
+```
+
+Criar `.env` a partir de `.env.example` e preencher variáveis:
+```bash
+cp .env.example .env
+# edite .env conforme necessário (DB_USER, DB_PASSWORD, API_SECRET_KEY, etc.)
+```
+
+Baixar as imagens publicadas:
+```bash
+docker compose --env-file .env pull
+```
+
+Subir os serviços:
+```bash
+docker compose --env-file .env up -d
+```
+
+Criar usuário administrador no painel:
+```bash
+docker compose exec frontend flask user create-admin
+```
+
+Gerar token de API e adicionar ao `.env`:
+```bash
+docker compose exec backend python -m scripts.create_admin_token --name super-admin-inicial
+# copie o token gerado e salve em API_ADMIN_TOKEN no .env, depois:
+docker compose restart frontend
+```
 
 ## 🧪 Cliente de Linha de Comando
-
 ```bash
 export AUTONMAP_API_URL=http://localhost/api
 export AUTONMAP_API_TOKEN=<seu_token>
+
 python3 scan_cli.py
 ```
 
 ## 🔄 Troubleshooting
-
 - **Erro 500/403 em tokens**: Verifique `API_ADMIN_TOKEN` no `.env` e `GLOBAL_IP_ALLOWLIST`.
 - **2FA QR não aparece**: Ajustar CSP no Nginx.
 - **API 404 no CLI**: Certifique-se de usar `/api` no endpoint.
@@ -93,4 +107,4 @@ python3 scan_cli.py
 - `.env.example` – Exemplo de configuração.
 
 ## 🤝 Contribuições
-Contribuições são bem‑vindas! Abra issues ou PRs com melhorias.
+Contribuições são bem-vindas! Abra issues ou PRs com melhorias.

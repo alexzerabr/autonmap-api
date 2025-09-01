@@ -48,8 +48,12 @@ docker compose --env-file .env down --remove-orphans -v || true
 
 rm -rf frontend/migrations || true
 
-echo "Construindo e subindo serviços..."
-docker compose --env-file .env up -d --build
+echo "Atualizando imagens e subindo serviços..."
+# Faz o pull das imagens publicadas (backend, frontend, worker e nginx) e depois
+# levanta os serviços em segundo plano. O parâmetro --build foi removido pois
+# todas as imagens são obtidas do registro e não há necessidade de compilação local.
+docker compose --env-file .env pull
+docker compose --env-file .env up -d
 
 echo "Esperando pelo Postgres..."
 for i in {1..60}; do
