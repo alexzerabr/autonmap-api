@@ -49,9 +49,6 @@ docker compose --env-file .env down --remove-orphans -v || true
 rm -rf frontend/migrations || true
 
 echo "Atualizando imagens e subindo serviços..."
-# Faz o pull das imagens publicadas (backend, frontend, worker e nginx) e depois
-# levanta os serviços em segundo plano. O parâmetro --build foi removido pois
-# todas as imagens são obtidas do registro e não há necessidade de compilação local.
 docker compose --env-file .env pull
 docker compose --env-file .env up -d
 
@@ -104,8 +101,33 @@ else
   echo "Token de admin salvo no .env."
 fi
 
-echo "Reiniciando frontend para ler variáveis atualizadas..."
-docker compose --env-file .env restart frontend
+echo "Aplicando API_ADMIN_TOKEN no frontend..."
+docker compose --env-file .env up -d --no-deps --force-recreate frontend
+
+echo "Aguardando frontend..."
+for i in {1..5}; do
+  cid=$(docker compose --env-file .env ps -q frontend || true)
+  [[ -n "$cid" ]] && break
+  sleep 1
+done
+if [[ -z "$cid" ]]; then
+  echo "Não foi possível obter o container do frontend." >&2
+  exit 1
+fi
+
+for i in {1..60}; do
+  status=$(docker inspect --format '{{.State.Health.Status}}' "$cid" 2>/dev/null || echo "unknown")
+  if [[ "$status" == "healthy" ]]; then
+    echo "Frontend saudável."
+    break
+  fi
+  sleep 2
+  if [[ $i -eq 60 ]]; then
+    echo "Frontend não respondendo." >&2
+    docker logs "$cid" | tail -n 120 || true
+    exit 1
+  fi
+done
 
 echo ""
 echo "Setup concluído com sucesso!"

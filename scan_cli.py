@@ -53,7 +53,7 @@ from pathlib import Path
 
 API_URL = os.getenv("AUTONMAP_API_URL", "http://localhost/api")
 TOKEN_FILE = Path.home() / ".autonmap_token"
-API_TOKEN = "_eaCqGlkdxBkznMa_zlXIT5mD7kzs420aylgk3_FMS8"
+API_TOKEN = "yuWYiJWghya6f84Tlzn3HYM_FprdXOe9kCG1CKihZas" # Gerar seu próprio token
 
 class Colors:
     RED = '\033[91m'
